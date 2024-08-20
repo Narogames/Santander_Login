@@ -1,102 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, TextInput, Button } from 'react-native';
 
-const umMesAtras = () => {
-  const hoje = new Date();
-  hoje.setMonth(hoje.getMonth() - 1);
-  return hoje;
-};
+import React, { useState } from 'react';
+import { StyleSheet, View, Alert, SafeAreaView } from 'react-native';
+import AccountSummary from './AccountSummary';
+import TransactionForm from './TransactionForm';
 
 const App = () => {
-  const [tarefas, setTarefas] = useState([
-    { id: '1', titulo: 'Comprar leite', concluida: false, dataCriacao: new Date('2024-07-01') },
-    { id: '2', titulo: 'Lavar a louça', concluida: true, dataCriacao: new Date('2024-08-10') },
-    { id: '3', titulo: 'Ir ao mercado', concluida: false, dataCriacao: new Date('2024-07-20') },
-  ]);
-  const [novaTarefa, setNovaTarefa] = useState('');
+  const [saldo, setSaldo] = useState(7320.92);
+  const [valor, setValor] = useState('');
 
-  useEffect(() => {
-    const tarefasFiltradas = tarefas.filter(tarefa => tarefa.dataCriacao >= umMesAtras());
-    setTarefas(tarefasFiltradas);
-  }, []);
-
-  const alternarConclusaoTarefa = (id) => {
-    setTarefas(tarefas.map(tarefa =>
-      tarefa.id === id ? { ...tarefa, concluida: !tarefa.concluida } : tarefa
-    ));
-  };
-
-  const adicionarTarefa = () => {
-    if (novaTarefa.trim()) {
-      const novaTarefaObj = { id: Date.now().toString(), titulo: novaTarefa, concluida: false, dataCriacao: new Date() };
-      setTarefas([novaTarefaObj, ...tarefas]); 
-      setNovaTarefa('');
+  const handleDepositar = () => {
+    const valorNum = parseFloat(valor);
+    if (isNaN(valorNum) || valorNum <= 0) {
+      Alert.alert('Erro', 'Digite um valor válido para depósito.');
+      return;
     }
+    const bonus = valorNum * 0.01;
+    setSaldo(saldo + valorNum + bonus);
+    setValor('');
   };
 
-  const renderizarItem = ({ item }) => (
-    <TouchableOpacity
-      style={[estilos.containerTarefa, item.concluida && estilos.tarefaConcluida]}
-      onPress={() => alternarConclusaoTarefa(item.id)}
-    >
-      <Text style={[estilos.textoTarefa, item.concluida && estilos.textoTarefaConcluido]}>
-        {item.titulo}
-      </Text>
-    </TouchableOpacity>
-  );
+  const handleSacar = () => {
+    const valorNum = parseFloat(valor);
+    if (isNaN(valorNum) || valorNum <= 0) {
+      Alert.alert('Erro', 'Digite um valor válido para saque.');
+      return;
+    }
+    if (valorNum > saldo) {
+      Alert.alert('Erro', 'Saldo insuficiente.');
+      return;
+    }
+    const saldoRestante = saldo - valorNum;
+    const multa = saldoRestante * 0.025;
+    setSaldo(saldoRestante - multa);
+    setValor('');
+  };
 
   return (
-    <View style={estilos.container}>
-      <TextInput
-        style={estilos.input}
-        value={novaTarefa}
-        onChangeText={setNovaTarefa}
-        placeholder="Adicionar nova tarefa"
+    <SafeAreaView style={styles.container}>
+      <AccountSummary saldo={saldo} />
+      <TransactionForm 
+        valor={valor}
+        setValor={setValor}
+        handleDepositar={handleDepositar}
+        handleSacar={handleSacar}
       />
-      <Button title="Adicionar Tarefa" onPress={adicionarTarefa} />
-      <FlatList
-        data={tarefas}
-        renderItem={renderizarItem}
-        keyExtractor={item => item.id}
-        extraData={tarefas}
-      />
-    </View>
+    </SafeAreaView>
   );
 };
 
-const estilos = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#f5f5f5',
-  },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  containerTarefa: {
-    padding: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    borderRadius: 5,
-    marginVertical: 5,
-  },
-  tarefaConcluida: {
-    borderStyle: 'dashed',
-    borderColor: 'green',
-    borderWidth: 2,
-  },
-  textoTarefa: {
-    fontSize: 18,
-  },
-  textoTarefaConcluido: {
-    textDecorationLine: 'line-through',
-    color: 'gray',
   },
 });
 
